@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './src/config/env.js';
 import { defineConfig } from 'prisma/config';
 import { getDatabaseUrl } from './src/config/database.js';
 

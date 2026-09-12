@@ -1,13 +1,15 @@
 import jwt from 'jsonwebtoken';
 import { registerUser, authenticateUser } from '../services/authService.js';
+import { AuthDTO, LoginDTO } from '../DTO/AuthDTO.js';
 
 export async function register(req, res) {
-  const user = await registerUser(req.body);
+  const dto = new AuthDTO(req.body);
+  const user = await registerUser(dto);
   return res.status(201).json({ user });
 }
-
 export async function login(req, res) {
-  const user = await authenticateUser(req.body);
+  const dto = new LoginDTO(req.body);
+  const user = await authenticateUser(dto);
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
@@ -19,5 +21,14 @@ export async function login(req, res) {
     expiresIn: process.env.JWT_EXPIRES_IN || '1h',
   });
 
-  return res.status(200).json({ user, token });
+  const { exp } = jwt.decode(token);
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    expires: new Date(exp * 1000),
+  });
+
+  return res.status(200).json({ user });
 }

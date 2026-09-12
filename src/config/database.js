@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './env.js';
 
 export function getDatabaseUrl(env = process.env) {
   if (env.DATABASE_URL) return env.DATABASE_URL;

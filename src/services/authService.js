@@ -1,7 +1,6 @@
 import { getPrisma } from '../prisma/client.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { HttpError } from '../utils/httpError.js';
-import { validateLoginInput, validateRegisterInput } from '../validators/authValidator.js';
 
 const publicUserFields = {
   id: true,
@@ -13,8 +12,7 @@ const publicUserFields = {
 
 let dummyPasswordHash;
 
-export async function registerUser(input) {
-  const { name, email, password } = validateRegisterInput(input);
+export async function registerUser({ name, email, password }) {
   const passwordHash = await hashPassword(password);
 
   try {
@@ -31,15 +29,13 @@ export async function registerUser(input) {
   }
 }
 
-export async function authenticateUser(input) {
-  const { email, password } = validateLoginInput(input);
+export async function authenticateUser({ email, password }) {
   const user = await getPrisma().user.findUnique({
     where: { email },
     select: { ...publicUserFields, passwordHash: true },
   });
 
-  const passwordHash = user?.passwordHash
-    ?? await (dummyPasswordHash ??= hashPassword('unused-account-password'));
+  const passwordHash = user?.passwordHash ?? await (dummyPasswordHash ??= hashPassword('unused-account-password'));
   const matches = await verifyPassword(password, passwordHash);
 
   if (!user || !matches) {

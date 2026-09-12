@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken';
 
 export default function authMiddleware(req, res, next) {
   const authorization = req.get('authorization');
-  const token = authorization?.match(/^Bearer[ \t]+(\S+)$/i)?.[1];
+  const cookieToken = req.get('cookie')?.match(/(?:^|;\s*)token=([^;]+)/)?.[1];
+  const token = authorization?.match(/^Bearer[ \t]+(\S+)$/i)?.[1] || cookieToken;
   if (!token) {
     return res.status(401).json({ message: 'Token ausente ou inválido.' });
   }
