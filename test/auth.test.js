@@ -63,6 +63,10 @@ test('login e cadastro validam a senha sem normalizar seu conteúdo', () => {
 });
 
 test('cadastro normaliza dados e envia somente o hash ao Prisma', async (t) => {
+  mockPrisma(t, 'findUnique', async ({ where }) => {
+    assert.equal(where.email, publicUser.email);
+    return null;
+  });
   mockPrisma(t, 'create', async ({ data, select }) => {
     assert.equal(data.name, publicUser.name);
     assert.equal(data.email, publicUser.email);
@@ -80,6 +84,7 @@ test('cadastro normaliza dados e envia somente o hash ao Prisma', async (t) => {
 });
 
 test('cadastro rejeita dados inválidos antes de consultar o banco', async (t) => {
+  const findUnique = mockPrisma(t, 'findUnique', async () => {});
   const create = mockPrisma(t, 'create', async () => {});
   for (const input of [
     null,
@@ -92,10 +97,35 @@ test('cadastro rejeita dados inválidos antes de consultar o banco', async (t) =
   ]) {
     await assert.rejects(register({ body: input }, {}), { status: 400 });
   }
+  assert.equal(findUnique.mock.callCount(), 0);
   assert.equal(create.mock.callCount(), 0);
 });
 
-test('cadastro trata conflito de email no banco', async (t) => {
+test('cadastro rejeita email existente antes de tentar criar o usuário', async (t) => {
+  mockPrisma(t, 'findUnique', async ({ where }) => {
+    assert.equal(where.email, publicUser.email);
+    return { id: publicUser.id };
+  });
+  const create = mockPrisma(t, 'create', async () => {});
+
+  await assert.rejects(register({
+    body: { ...publicUser, email: '  TESTE@example.com  ', password },
+  }, {}), { status: 409, message: 'Este email já está cadastrado.' });
+  assert.equal(create.mock.callCount(), 0);
+});
+
+test('cadastro propaga falha na consulta de unicidade sem criar o usuário', async (t) => {
+  const databaseError = new Error('Banco indisponível');
+  mockPrisma(t, 'findUnique', async () => { throw databaseError; });
+  const create = mockPrisma(t, 'create', async () => {});
+
+  await assert.rejects(registerUser(new AuthDTO({ ...publicUser, password })),
+    error => error === databaseError);
+  assert.equal(create.mock.callCount(), 0);
+});
+
+test('cadastro trata conflito de email no banco após a consulta de unicidade', async (t) => {
+  mockPrisma(t, 'findUnique', async () => null);
   mockPrisma(t, 'create', async () => {
     throw Object.assign(new Error('unique constraint'), { code: 'P2002' });
   });

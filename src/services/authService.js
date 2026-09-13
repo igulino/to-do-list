@@ -1,6 +1,7 @@
 import { getPrisma } from '../prisma/client.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { HttpError } from '../utils/httpError.js';
+import { validateEmailUniqueness } from '../validations/authValidation.js';
 
 const publicUserFields = {
   id: true,
@@ -13,6 +14,8 @@ const publicUserFields = {
 let dummyPasswordHash;
 
 export async function registerUser({ name, email, password }) {
+  await validateEmailUniqueness(email);
+
   const passwordHash = await hashPassword(password);
 
   try {

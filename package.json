@@ -16,6 +16,7 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "express": "^5.0.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemon": "^3.1.14",
     "pg": "^8.0.0"
   },
   "devDependencies": {
