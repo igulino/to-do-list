@@ -1,6 +1,8 @@
 import { GetTasksDTO } from '../DTO/GetTasksDTO.js';
 import { CreateTaskDTO } from '../DTO/CreateTaskDTO.js';
-import { getTasks, createTask } from '../services/taskService.js';
+import { UpdateTaskDTO } from '../DTO/UpdateTaskDTO.js';
+import { TaskIdDTO } from '../DTO/TaskIdDTO.js';
+import { getTasks, createTask, updateTask, deleteTask } from '../services/taskService.js';
 
 export async function GetTasks(req, res) {
   // pegando a query q eu vou usar no paginate lá
@@ -16,9 +18,13 @@ export async function CreateTask(req, res) {
 }
 
 export async function UpdateTask(req, res) {
-    //update de status
-    //ou title ou description ou tudo junto... tanto faz
+  const dto = new UpdateTaskDTO(req.body, req.params.id, req.user?.sub);
+  const task = await updateTask(dto);
+  return res.status(200).json({ task });
 }
 
-export async function DeleatTask(req, res) {
+export async function DeleateTask(req, res) {
+  const dto = new TaskIdDTO(req.params.id, req.user?.sub);
+  await deleteTask(dto);
+  return res.status(204).send();
 }

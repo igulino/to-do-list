@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { register, login } from '../controllers/authController.js';
-import { GetTasks, CreateTask } from '../controllers/taskController.js';
+import { GetTasks, CreateTask, UpdateTask, DeleateTask } from '../controllers/taskController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const routes = Router();
@@ -14,7 +14,8 @@ routes.post('/api/auth/login', login);
 protectedRoutes.use(authMiddleware);
 protectedRoutes.get('/', GetTasks);
 protectedRoutes.post('/', CreateTask);
-// TODO: registrar atualização e exclusão de tarefas neste grupo.
+protectedRoutes.patch('/:id', UpdateTask);
+protectedRoutes.delete('/:id', DeleateTask);
 routes.use('/api/tasks', protectedRoutes);
 
 export default routes;
