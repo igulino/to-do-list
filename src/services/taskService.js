@@ -58,25 +58,34 @@ export async function deleteTask({ userId, taskId }) {
 }
 
 export async function getTasks({ userId, page, limit, skip }) {
-  const prisma = getPrisma();
   const where = { userId };
-  const [tasks, total] = await Promise.all([
-    prisma.task.findMany({
+  // Mantém os grupos, os totais e as tarefas na mesma versão dos dados.
+  return getPrisma().$transaction(async (prisma) => {
+    const groups = await prisma.task.groupBy({
+      by: ['status'],
       where,
-      skip,
-      take: limit,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    }),
-    prisma.task.count({ where }),
-  ]);
+      _count: { _all: true },
+      orderBy: { status: 'asc' },
+    });
+    const statuses = groups.slice(skip, skip + limit).map(group => group.status);
+    const total = groups.reduce((sum, group) => sum + group._count._all, 0);
+    const totalStatuses = groups.length;
 
-  return {
-    tasks,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    // O limite seleciona status; todas as tarefas desses grupos entram na página.
+    const tasks = statuses.length ? await prisma.task.findMany({
+      where: { ...where, status: { in: statuses } },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }, { id: 'desc' }],
+    }) : [];
+
+    return {
+      tasks,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalStatuses,
+        totalPages: Math.ceil(totalStatuses / limit),
+      },
+    };
+  }, { isolationLevel: 'RepeatableRead' });
 }

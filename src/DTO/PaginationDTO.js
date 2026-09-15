@@ -4,7 +4,7 @@ export class PaginationDTO {
   constructor(input = {}) {
     const rawPage = input.page ?? '1';
     const page = Number(rawPage);
-    const limit = 5;
+    const limit = 5; // Quantidade de status distintos por página.
     const skip = (page - 1) * limit;
 
     if (typeof rawPage !== 'string' || !/^[1-9]\d*$/.test(rawPage)
