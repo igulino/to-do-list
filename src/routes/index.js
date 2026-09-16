@@ -7,6 +7,9 @@ const routes = Router();
 const protectedRoutes = Router();
 
 // Rotas públicas.
+routes.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 routes.post('/api/auth/register', register);
 routes.post('/api/auth/login', login);
 
